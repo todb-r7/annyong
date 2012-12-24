@@ -24,7 +24,7 @@ end
 owner = config["org"] || config["user"]
 repo = config["repo"]
 pr_regex = Regexp.new(/pull request #{owner}\x2f#{repo}/)
-@pr_entries = @rss.entries.select {|entry| entry.id =~ /:PullRequestEvent/ and entry.title =~ pr_regex}
+@pr_entries = @rss.entries.select {|entry| entry.id =~ /:(IssueComment|PullRequest)Event/ and entry.title =~ pr_regex}
 
 @pr_entries.each do |entry|
 	entry.each_pair do |k,v|
@@ -40,9 +40,9 @@ pr_regex = Regexp.new(/pull request #{owner}\x2f#{repo}/)
 			when :author
 				v.split.first
 			when :title
-				matchdata,author,verb,repo,num = v.match(/([^\x20]+) ([^\x20]+) pull request (.*\x2f.*)#([0-9]+)/)
+				matchdata,author,verb,repo,num = v.match(/([^\x20]+) (.+) pull request (.*\x2f.*)#([0-9]+)/)
 				author,verb,repo,num = matchdata[1,4]
-				"Pull Request ##{num} #{verb} by #{author}"
+				"Pull Request ##{num} #{verb.gsub(/ on$/,"")} by #{author}"
 			else
 				v
 			end
