@@ -1,3 +1,10 @@
+GIT
+  remote: https://github.com/todb-r7/simple-rss
+  revision: 65e8129e10103e9d6a429959229dc3f9db90476c
+  ref: 65e8129
+  specs:
+    simple-rss (1.2.3)
+
 GEM
   remote: http://rubygems.org/
   specs:
@@ -10,7 +17,6 @@ GEM
     mime-types (1.19)
     nokogiri (1.5.5)
     polyglot (0.3.3)
-    simple-rss (1.2.3)
     treetop (1.4.12)
       polyglot
       polyglot (>= 0.3.1)
@@ -22,4 +28,4 @@ DEPENDENCIES
   cinch
   mail
   nokogiri
-  simple-rss
+  simple-rss!

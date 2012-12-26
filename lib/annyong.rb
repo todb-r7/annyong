@@ -1,7 +1,12 @@
+require 'bundler'
+Bundler.setup
+
 require 'simple-rss'
 require 'open-uri'
 require 'yaml'
 require 'nokogiri'
+require 'mail'
+require 'fileutils'
 
 module Annyong
 
@@ -13,7 +18,7 @@ module Annyong
 
 	class RssFeed
 
-		attr_accessor :config
+		attr_accessor :config, :id_cache_file
 		attr_reader   :rss_parsed
 
 		private
@@ -102,7 +107,7 @@ module Annyong
 						this_entry[:number] = this_entry[k][1]
 					end
 				end
-				@rss_parsed << this_entry
+				@rss_parsed << this_entry unless ids.include? this_entry.id
 			end
 			@rss_parsed.sort! {|x,y| x.id <=> y.id} # Reverse it, basically
 			return @rss_parsed
@@ -121,12 +126,49 @@ module Annyong
 			@rss_entry_lists.include?(sym) || super
 		end
 
+		def id_cache_file
+			@id_cache_file ||= "/tmp/annyong_id_cache.txt"
+			unless File.readable? @id_cache_file
+				File.open(@id_cache_file, "wb") {|f| f.write ""}
+			end
+			return @id_cache_file
+		end
+
 		public
+
+		def cached_ids
+			fdata = File.open(id_cache_file, "rb") {|f| f.read f.stat.size}
+			fdata.empty? ? [0] : fdata.split.map {|i| i.to_i} 
+		end
+
+		def new_ids
+			self.ids - cached_ids
+		end
+
+		def save
+			saved_ids = new_ids
+			File.open(id_cache_file, "wb") {|f| f.puts new_ids.join("\n")}
+			saved_ids
+		end
+
+		def clear_ids
+			@rss_parsed = []
+		end
+
+		def reset
+			@rss_parsed = []
+			FileUtils.rm_rf id_cache_file
+		end
+
+		def latest
+			@rss_parsed.select {|x| new_ids.include? x.id}
+		end
 
 		def fetch
 			@rss = SimpleRSS.parse(open(@config["uri"]))
 			select_pull_requests
 			parse_pull_requests
+			self.ids
 		end
 
 		def initialize(config_file)
@@ -140,6 +182,84 @@ module Annyong
 		end
 
 	end
+
+	class Mailer
+
+		attr_accessor :mail
+
+		def yaml_config(fname)
+			config = YAML.load(File.read(fname))
+			@user = config["smtpuser"]
+			@pass = config["smtppass"]
+			@rcpt = config["rcpt"]
+			config
+		end
+
+		def config_mail
+			user, pass = @user, @pass
+			::Mail.defaults do
+				delivery_method :smtp, {
+					:address => 'smtp.gmail.com',
+					:port => '587',
+					:user_name => user,
+					:password =>  pass,
+					:authentication => :plain,
+					:enable_starttls_auto => true
+				}
+			end
+		end
+
+		def initialize(config_file)
+			@config_file = config_file
+			@config = yaml_config(@config_file)
+			config_mail
+			@mail = ::Mail.new
+		end
+
+		def compose_notification(rss_entry)
+			unless rss_entry.kind_of? Annyong::RssEntry
+				raise ArgumentError, "Expecting an RssEntry"
+			end
+			subj = case rss_entry.verb
+			when "opened"
+				"New: Pull Request #%d opened by @%s"
+			when "merged"
+				"Complete: Pull Request #%d merged by @%s"
+			when "closed"
+				"Closed: Pull Request #%d closed by @%s"
+			else
+				nil
+			end
+			return unless subj
+
+			data = "@%s updated PR#%d" % [rss_entry.author, rss_entry.number]
+			data << "\n"
+			data << "Title: \x22#{rss_entry.content}%s\x22\n" 
+			data << "\n"
+			data << "For more details, visit:\n\n"
+			data << rss_entry.link.to_s
+			data += "\n\n"
+			user,rcpt = @user,@rcpt
+
+			@mail = ::Mail.new do
+				from    user
+				to      rcpt
+				subject subj % [rss_entry.number, rss_entry.author]
+				body    data
+			end
+		end
+
+		def send
+			if @mail.kind_of? Mail::Message
+				puts "[#{Time.now.localtime}] Sending: #{@mail.subject}"
+				@mail.deliver!
+			else
+				raise RuntimeError, "Nothing to send."
+			end	
+		end
+
+	end
+
 end
 
 
