@@ -6,23 +6,17 @@ require 'nokogiri'
 module Annyong
 
 	class RssEntry < Struct.new(
-		:id, :title, :link, :author, 
+		:id, :title, :verb, :number, :link, :author, 
 		:published, :content, :comment_flag
 	)
 	end
 
 	class RssFeed
 
-		attr_accessor :config, :rss_parsed
+		attr_accessor :config
+		attr_reader   :rss_parsed
 
-		def initialize(config_file)
-			@config_file = config_file
-			@config = yaml_config(@config_file)
-			@owner = config["org"] || config["user"]
-			@repo = config["repo"]
-			@regex = pull_request_regex
-			@rss_parsed = []
-		end
+		private
 
 		def parse_html(str)
 			ret = str.dup
@@ -72,34 +66,41 @@ module Annyong
 			end
 		end
 
-		def fetch
-			@rss = SimpleRSS.parse(open(@config["uri"]))
-			@pr_entries = select_pull_requests
+		def massage_value(k,v)
+			case k
+			when :content
+				message(v)
+			when :id
+				v.split(/\x2f/).last.to_i
+			when :link
+				URI.parse(v)
+			when :author
+				v.split.first
+			when :title
+				matchdata = v.match(/[^\x20]+ (.+) pull request .*\x2f.*#([0-9]+)/)
+				verb,number = matchdata[1,2]
+				verb = "commented" if verb =~ /^comment/
+				[verb,number]
+			else
+				v
+			end
+		end
+
+		def skip_key?(k)
+			k == :updated || k == :"link+alternate" || k.to_s =~ /^media/
+		end
+
+		def parse_pull_requests
 			@pr_entries.each do |entry|
 				this_entry = RssEntry.new
 				this_entry.comment_flag = !!(entry.id =~ /IssueComment/)
 				entry.each_pair do |k,v|
-					next if k == :updated
-					next if k == :"link+alternate"
-					next if k.to_s =~ /^media/
-
-					parsed_value = case k
-						when :content
-							message(v)
-						when :id
-							v.split(/\x2f/).last.to_i
-						when :link
-							URI.parse(v)
-						when :author
-							v.split.first
-						when :title
-							matchdata,author,verb,repo,num = v.match(/([^\x20]+) (.+) pull request (.*\x2f.*)#([0-9]+)/)
-							author,verb,repo,num = matchdata[1,4]
-							"Pull Request ##{num} #{this_entry.comment_flag ? "comment" : verb} by #{author}"
-						else
-							v
+					next if skip_key?(k)
+					this_entry[k] = massage_value(k,v)
+					if k == :title
+						this_entry[:verb] = this_entry[k][0]
+						this_entry[:number] = this_entry[k][1]
 					end
-					this_entry[k] = parsed_value
 				end
 				@rss_parsed << this_entry
 			end
@@ -107,12 +108,35 @@ module Annyong
 			return @rss_parsed
 		end
 
-		def id_list
-			if @rss_parsed.first.class == Annyong::RssEntry
-				@rss_parsed.map {|x| x.id}
+		def method_missing(sym, *args, &block)
+			if @rss_entry_lists.include? sym
+				real_method = sym.to_s.chop.intern
+				@rss_parsed.map {|x| x.send real_method}
 			else
-				[]
+				super
 			end
+		end
+
+		def respond_to_missing?(sym, include_private=false)
+			@rss_entry_lists.include?(sym) || super
+		end
+
+		public
+
+		def fetch
+			@rss = SimpleRSS.parse(open(@config["uri"]))
+			select_pull_requests
+			parse_pull_requests
+		end
+
+		def initialize(config_file)
+			@rss_entry_lists = RssEntry.members.map {|x| (x.to_s + "s").intern}
+			@config_file = config_file
+			@config = yaml_config(@config_file)
+			@owner = config["org"] || config["user"]
+			@repo = config["repo"]
+			@regex = pull_request_regex
+			@rss_parsed = []
 		end
 
 	end
