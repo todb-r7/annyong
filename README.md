@@ -1,8 +1,9 @@
 Annyong!
 ========
 
-![Annyong](http://i.imgur.com/WuIBL.jpg) -- he pretty much just repeats
-what he hears. It'll be finished "one day."
+![Annyong](http://i.imgur.com/WuIBL.jpg)
+
+He pretty much just repeats what he hears. It'll be finished "one day."
 
 Annyong is a simple RSS watcher (built, unsurprisingly, on top of
 simple-rss) that watches a GitHub organization's private RSS feed for
