@@ -234,13 +234,13 @@ module Annyong
 
 			data = "@%s updated PR#%d" % [rss_entry.author, rss_entry.number]
 			data << "\n"
-			data << "Title: \x22#{rss_entry.content}%s\x22\n" 
+			data << "Title: \x22#{rss_entry.content}\x22\n" 
 			data << "\n"
 			data << "For more details, visit:\n\n"
 			data << rss_entry.link.to_s
 			data += "\n\n"
-			user,rcpt = @user,@rcpt
 
+			user,rcpt = @user,@rcpt
 			@mail = ::Mail.new do
 				from    user
 				to      rcpt
