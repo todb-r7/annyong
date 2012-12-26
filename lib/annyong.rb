@@ -221,7 +221,7 @@ module Annyong
 				raise ArgumentError, "Expecting an RssEntry"
 			end
 			subj = case rss_entry.verb
-			when "opened"
+			when /opened/ # or reopened
 				"New: Pull Request #%d opened by @%s"
 			when "merged"
 				"Complete: Pull Request #%d merged by @%s"
