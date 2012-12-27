@@ -35,7 +35,9 @@ loop do
 	else
 		puts "#{ts} Nothing new, sleeping for #{SLEEP_INTERVAL} seconds..."
 	end
+
 	select(nil,nil,nil,SLEEP_INTERVAL)
+
 end
 
 

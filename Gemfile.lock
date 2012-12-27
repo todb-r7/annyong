@@ -1,4 +1,10 @@
 GIT
+  remote: https://github.com/todb-r7/cinch
+  revision: f725a5ef42072627e11ea920fd675e635bd890eb
+  specs:
+    cinch (2.0.3)
+
+GIT
   remote: https://github.com/todb-r7/simple-rss
   revision: 65e8129e10103e9d6a429959229dc3f9db90476c
   ref: 65e8129
@@ -8,7 +14,6 @@ GIT
 GEM
   remote: http://rubygems.org/
   specs:
-    cinch (2.0.3)
     i18n (0.6.1)
     mail (2.5.3)
       i18n (>= 0.4.0)
@@ -25,7 +30,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  cinch
+  cinch!
   mail
   nokogiri
   simple-rss!

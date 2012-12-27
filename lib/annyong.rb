@@ -221,8 +221,10 @@ module Annyong
 				raise ArgumentError, "Expecting an RssEntry"
 			end
 			subj = case rss_entry.verb
-			when /opened/ # or reopened
+			when "opened" # or reopened
 				"New: Pull Request #%d opened by @%s"
+			when "reopened"
+				"New: Pull Request #%d reopened by @%s"
 			when "merged"
 				"Complete: Pull Request #%d merged by @%s"
 			when "closed"
@@ -230,6 +232,8 @@ module Annyong
 			else
 				nil
 			end
+
+			# If it's not a categorized verb, skip entirely.
 			return unless subj
 
 			data = "@%s updated PR#%d" % [rss_entry.author, rss_entry.number]
