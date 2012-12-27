@@ -239,11 +239,15 @@ module Annyong
 			end
 			case rss_entry.verb
 			when "opened", "reopened", "merged", "closed"
-				num, name, author, verb = [rss_entry.number, rss_entry.content, rss_entry.author, rss_entry.verb]
-				@msg = "PR##{num}, \x22#{name}\x22 was #{verb} by @#{author}"
+				num, name, author, verb, link = [
+					rss_entry.number, rss_entry.content, 
+					rss_entry.author, rss_entry.verb, rss_entry.link.to_s]
+				@msg = "PR##{num}, \x22#{name}\x22 was #{verb} by @#{author} : #{link}"
 			when /comment/
-				num, name = [rss_entry.number, rss_entry.author]
-				@msg = "@#{name} commented on PR##{num}" 
+				num, name, link = [
+					rss_entry.number,
+					rss_entry.author, rss_entry.link.to_s]
+				@msg = "@#{name} commented on PR##{num} : #{link}" 
 			end
 		end
 
