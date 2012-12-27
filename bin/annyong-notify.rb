@@ -39,7 +39,7 @@ loop do
 	@r.fetch
 	unless @r.latest.empty?
 		@r.latest.each do |entry| 
-			# mail(entry, config_fname)
+			mail(entry, config_fname)
 			irc(entry, config_fname)
 		end
 	@r.save
