@@ -36,6 +36,7 @@ loop do
 		puts "#{ts} Nothing new, sleeping for #{SLEEP_INTERVAL} seconds..."
 	end
 
+	$stdout.flush
 	select(nil,nil,nil,SLEEP_INTERVAL)
 
 end
