@@ -23,7 +23,8 @@ def mail(entry, conf)
 	if m.mail.subject
 		m.send
 	else
-		puts "#{ts} Skipping notification: #{entry.author} #{entry.verb} on #{entry.number}"
+		name, verb, num = entry.author, entry.verb, entry.number
+		puts "#{ts} Skipping e-mail notification: #{name} #{verb} on #{num}"
 	end
 end
 
