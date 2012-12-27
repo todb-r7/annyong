@@ -17,19 +17,30 @@ def ts
 	"[#{Time.now.localtime}]"
 end
 
+def mail(entry, conf)
+	m = Annyong::Mailer.new(conf)
+	m.compose_notification(entry)
+	if m.mail.subject
+		m.send
+	else
+		puts "#{ts} Skipping notification: #{entry.author} #{entry.verb} on #{entry.number}"
+	end
+end
+
+def irc(entry, conf)
+	@irc ||= Annyong::IrcClient.new(conf)
+	@irc.compose_notification(entry)
+	@irc.notify
+end
+
 loop do
 
 	puts "#{ts} Checking for new activity..."
 	@r.fetch
 	unless @r.latest.empty?
-		@r.latest.each do |entry|
-			@m = Annyong::Mailer.new("config.yml")
-			@m.compose_notification(entry)
-			if @m.mail.subject
-				@m.send
-			else
-				puts "#{ts} Skipping notification: #{entry.author} #{entry.verb} on #{entry.number}"
-			end
+		@r.latest.each do |entry| 
+			# mail(entry, config_fname)
+			irc(entry, config_fname)
 		end
 	@r.save
 	else

@@ -2,6 +2,7 @@ require 'bundler'
 Bundler.setup
 
 require 'simple-rss'
+require 'cinch'
 require 'open-uri'
 require 'yaml'
 require 'nokogiri'
@@ -179,6 +180,77 @@ module Annyong
 			@repo = config["repo"]
 			@regex = pull_request_regex
 			@rss_parsed = []
+		end
+
+	end
+
+	class IrcClient
+
+		attr_reader :bot, :msg
+
+		private
+
+		def yaml_config(fname)
+			config = YAML.load(File.read(fname))
+			@user = config["ircnick"]
+			@pass = config["ircpass"]
+			@real = config["ircreal"]
+			@chan = config["channel"]
+			config
+		end
+
+		def bot_config
+			user,pass,real,chan = @user,@pass,@real,@chan
+			@bot = Cinch::Bot.new do
+				configure do |c|
+					c.server = "irc.freenode.net"
+					c.nick = c.user = user
+					c.password = pass
+					c.realname = real
+					c.channels = [chan]
+					c.verbose = true
+				end
+			end
+		end
+
+		def start
+			unless (@bot.online? rescue false)
+				Thread.new {@bot.start}
+				@bot.online?
+			end
+		end
+
+		public
+
+		def say(msg)
+			if msg and msg.respond_to? :to_s
+				@bot.Channel(@chan).send(msg.to_s)
+			end
+		end
+
+		def notify
+			say @msg
+		end
+
+		def compose_notification(rss_entry)
+			@msg = nil
+			unless rss_entry.kind_of? Annyong::RssEntry
+				raise ArgumentError, "Expecting an RssEntry"
+			end
+			case rss_entry.verb
+			when "opened", "reopened", "merged", "closed"
+				num, name, author, verb = [rss_entry.number, rss_entry.content, rss_entry.author, rss_entry.verb]
+				@msg = "PR##{num}, \x22#{name}\x22 was #{verb} by @#{author}"
+			when /comment/
+				num, name = [rss_entry.number, rss_entry.author]
+				@msg = "@#{name} commented on PR##{num}" 
+			end
+		end
+
+		def initialize(config)
+			yaml_config(config)
+			bot_config
+			start
 		end
 
 	end
