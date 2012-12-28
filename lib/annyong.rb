@@ -166,7 +166,12 @@ module Annyong
     end
 
     def fetch
+      begin
       @rss = SimpleRSS.parse(open(@config["uri"]))
+      rescue ::OpenURI::HTTPError => exception
+        $stderr.puts "Caught '#{exception}`"
+      end
+      return unless @rss
       select_pull_requests
       parse_pull_requests
       self.ids
