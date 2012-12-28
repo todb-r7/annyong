@@ -53,4 +53,4 @@ loop do
 
 end
 
-
+# vim: nowrap expandtab sw=2 sts=0 ts=2 ff=unix ft=ruby
