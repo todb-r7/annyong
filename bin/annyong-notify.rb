@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 base = __FILE__
 while File.symlink?(base)
-	base = File.expand_path(File.readlink(base), File.dirnmae(base))
+  base = File.expand_path(File.readlink(base), File.dirnmae(base))
 end
 path = File.expand_path(File.join(File.dirname(base), "..", "lib"))
 $:.unshift path
@@ -14,42 +14,42 @@ require 'annyong'
 @r = Annyong::RssFeed.new(config_fname)
 
 def ts
-	"[#{Time.now.localtime}]"
+  "[#{Time.now.localtime}]"
 end
 
 def mail(entry, conf)
-	m = Annyong::Mailer.new(conf)
-	m.compose_notification(entry)
-	if m.mail.subject
-		m.send
-	else
-		name, verb, num = entry.author, entry.verb, entry.number
-		puts "#{ts} Skipping e-mail notification: #{name} #{verb} on #{num}"
-	end
+  m = Annyong::Mailer.new(conf)
+  m.compose_notification(entry)
+  if m.mail.subject
+    m.send
+  else
+    name, verb, num = entry.author, entry.verb, entry.number
+    puts "#{ts} Skipping e-mail notification: #{name} #{verb} on #{num}"
+  end
 end
 
 def irc(entry, conf)
-	@irc ||= Annyong::IrcClient.new(conf)
-	@irc.compose_notification(entry)
-	@irc.notify
+  @irc ||= Annyong::IrcClient.new(conf)
+  @irc.compose_notification(entry)
+  @irc.notify
 end
 
 loop do
 
-	puts "#{ts} Checking for new activity..."
-	@r.fetch
-	unless @r.latest.empty?
-		@r.latest.each do |entry| 
-			mail(entry, config_fname)
-			irc(entry, config_fname)
-		end
-	@r.save
-	else
-		puts "#{ts} Nothing new, sleeping for #{SLEEP_INTERVAL} seconds..."
-	end
+  puts "#{ts} Checking for new activity..."
+  @r.fetch
+  unless @r.latest.empty?
+    @r.latest.each do |entry| 
+      mail(entry, config_fname)
+      irc(entry, config_fname)
+    end
+  @r.save
+  else
+    puts "#{ts} Nothing new, sleeping for #{SLEEP_INTERVAL} seconds..."
+  end
 
-	$stdout.flush
-	select(nil,nil,nil,SLEEP_INTERVAL)
+  $stdout.flush
+  select(nil,nil,nil,SLEEP_INTERVAL)
 
 end
 

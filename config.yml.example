@@ -1,3 +1,18 @@
-user:  todb
-token: your-private-feed-token
-repo:  packetfu
+org:   orgname-to-watch
+user:  your-github-username
+token: your-github-rss-token
+repo:  repo-to-watch
+
+# Only use gmail for now
+
+smtpuser: user@gmail.com
+smtppass: smtppassword
+rcpt:     mailing-list@example.com
+
+# Only use freenode for now
+
+ircnick: Botname
+ircpass: "Registered Nick Password"
+ircreal: Bot Realname
+channel: "#yourchannel"
+
